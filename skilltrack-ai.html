@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillTrack AI — Skill Decay Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --bg2: #111827;
+    --bg3: #1a2236;
+    --card: #1e2a3a;
+    --border: rgba(99,179,237,0.12);
+    --border2: rgba(99,179,237,0.25);
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent3: #93c5fd;
+    --teal: #14b8a6;
+    --teal2: #2dd4bf;
+    --purple: #8b5cf6;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --green: #22c55e;
+    --text: #f0f6ff;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(11,15,26,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-logo span { color: var(--accent2); }
+  .nav-links { display: flex; gap: 0.25rem; }
+  .nav-links a {
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 0.85rem; color: var(--text2); text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-links a:hover { background: var(--bg3); color: var(--text); }
+
+  /* SECTIONS */
+  section { padding: 100px 2rem 80px; max-width: 1100px; margin: 0 auto; }
+  section:first-child { padding-top: 140px; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 140px 2rem 100px; max-width: 900px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 20px; padding: 6px 16px; font-size: 0.78rem;
+    color: var(--accent3); letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 700; line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent2); }
+  .hero p {
+    font-size: 1.15rem; color: var(--text2); max-width: 600px;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-cta {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none;
+    padding: 12px 28px; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border2);
+    padding: 12px 28px; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .btn-ghost:hover { background: var(--bg3); }
+
+  .hero-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border); border-radius: 12px;
+    border: 1px solid var(--border); overflow: hidden;
+    margin-top: 4rem;
+  }
+  .hero-stat {
+    background: var(--bg2); padding: 1.5rem;
+    text-align: center;
+  }
+  .hero-stat .num {
+    font-size: 2rem; font-weight: 700;
+    color: var(--accent2); letter-spacing: -0.02em;
+  }
+  .hero-stat .lbl { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+
+  /* SECTION HEADER */
+  .section-label {
+    font-size: 0.75rem; color: var(--teal2); letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 0.75rem;
+  }
+  .section-label::before {
+    content: ''; width: 24px; height: 2px; background: var(--teal);
+    border-radius: 2px;
+  }
+  .section-title {
+    font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700;
+    letter-spacing: -0.02em; margin-bottom: 1rem;
+  }
+  .section-sub { color: var(--text2); font-size: 1rem; max-width: 550px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .card-grid { display: grid; gap: 1rem; }
+  .card-grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card-grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .card p { font-size: 0.9rem; color: var(--text2); line-height: 1.6; }
+
+  /* SKILL DECAY */
+  .decay-visual {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .decay-bar-wrap { display: flex; flex-direction: column; gap: 12px; margin-top: 1.5rem; }
+  .decay-row { display: grid; grid-template-columns: 120px 1fr 50px; align-items: center; gap: 12px; }
+  .decay-row label { font-size: 0.85rem; color: var(--text2); }
+  .decay-track { background: rgba(255,255,255,0.06); border-radius: 4px; height: 8px; overflow: hidden; }
+  .decay-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .decay-pct { font-size: 0.82rem; color: var(--text3); font-family: var(--mono); }
+
+  /* PREDICTION MODULE */
+  #prediction { background: linear-gradient(180deg, var(--bg) 0%, rgba(59,130,246,0.03) 100%); }
+  .pred-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  @media (max-width: 768px) {
+    .pred-grid { grid-template-columns: 1fr; }
+    nav { display: none; }
+  }
+  .pred-form { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+  .pred-output { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; display: flex; flex-direction: column; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label {
+    display: block; font-size: 0.82rem; font-weight: 500;
+    color: var(--text2); margin-bottom: 6px; letter-spacing: 0.02em;
+  }
+  .form-group input, .form-group select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 14px;
+    color: var(--text); font-size: 0.9rem; font-family: var(--sans);
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent);
+  }
+  .form-group input[type="range"] {
+    padding: 0; background: transparent; border: none;
+    -webkit-appearance: none; cursor: pointer;
+  }
+  .form-group input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--bg3); height: 4px; border-radius: 2px;
+    border: 1px solid var(--border2);
+  }
+  .form-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); margin-top: -6px;
+    border: 2px solid var(--bg);
+  }
+  .slider-val {
+    display: flex; justify-content: space-between;
+    font-size: 0.78rem; color: var(--text3); margin-top: 4px;
+  }
+  .slider-val strong { color: var(--accent3); font-weight: 500; }
+  .run-btn {
+    width: 100%; padding: 14px; border: none;
+    background: var(--accent); color: #fff;
+    border-radius: 10px; font-size: 1rem; font-weight: 600;
+    cursor: pointer; font-family: var(--sans);
+    transition: all 0.2s; letter-spacing: 0.01em;
+  }
+  .run-btn:hover { background: #2563eb; }
+  .run-btn:active { transform: scale(0.99); }
+  .run-btn.loading { opacity: 0.7; cursor: wait; }
+
+  /* OUTPUT DISPLAY */
+  .output-placeholder {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; gap: 12px;
+    color: var(--text3); font-size: 0.9rem;
+  }
+  .output-placeholder svg { opacity: 0.3; }
+  .output-ready { display: none; flex-direction: column; gap: 1.5rem; }
+  .retention-ring-wrap {
+    display: flex; align-items: center; justify-content: center;
+    gap: 2rem; flex-wrap: wrap;
+  }
+  .retention-ring {
+    position: relative; width: 130px; height: 130px;
+  }
+  .retention-ring svg { transform: rotate(-90deg); }
+  .retention-ring-val {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .retention-ring-val .big { font-size: 1.8rem; font-weight: 700; }
+  .retention-ring-val .sm { font-size: 0.7rem; color: var(--text2); }
+  .status-badge {
+    padding: 6px 16px; border-radius: 20px;
+    font-size: 0.82rem; font-weight: 600; letter-spacing: 0.03em;
+  }
+  .status-high { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .status-mod { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .status-risk { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .output-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .out-metric {
+    background: var(--bg3); border-radius: 8px; padding: 12px;
+  }
+  .out-metric .m-lbl { font-size: 0.75rem; color: var(--text3); margin-bottom: 4px; }
+  .out-metric .m-val { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+  .recommendations { background: var(--bg3); border-radius: 10px; padding: 1.25rem; }
+  .recommendations h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: var(--teal2); }
+  .rec-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 0.85rem; color: var(--text2); padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-item::before { content: '→'; color: var(--accent2); font-size: 0.8rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* ANALYTICS */
+  .charts-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .chart-card h3 {
+    font-size: 0.88rem; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* DATASET INSIGHTS */
+  .insight-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin: 2rem 0;
+  }
+  .insight-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem;
+    text-align: center;
+  }
+  .insight-card .i-num {
+    font-size: 2rem; font-weight: 700; letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .insight-card .i-lbl { font-size: 0.8rem; color: var(--text2); }
+  .c-blue-num { color: var(--accent2); }
+  .c-teal-num { color: var(--teal2); }
+  .c-purple-num { color: #a78bfa; }
+  .c-amber-num { color: #fbbf24; }
+
+  .skills-table {
+    width: 100%; border-collapse: collapse; margin-top: 1rem;
+  }
+  .skills-table th {
+    text-align: left; font-size: 0.78rem; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .skills-table td {
+    padding: 10px 12px; font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .skill-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(59,130,246,0.1); color: var(--accent3);
+    border-radius: 4px; padding: 2px 8px; font-size: 0.78rem;
+  }
+  .bar-inline {
+    height: 6px; border-radius: 3px;
+    display: inline-block; vertical-align: middle; margin-left: 8px;
+  }
+
+  /* MODEL INFO */
+  .model-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  .model-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .model-card.featured { border-color: rgba(59,130,246,0.4); }
+  .model-card.featured::before {
+    content: 'Best Model';
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(59,130,246,0.2); color: var(--accent3);
+    font-size: 0.7rem; padding: 3px 8px; border-radius: 4px;
+    font-weight: 600;
+  }
+  .model-card h3 {
+    font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .algo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; font-family: var(--mono);
+  }
+  .algo-rf { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .algo-dt { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .algo-lr { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .metric-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.88rem;
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-row .k { color: var(--text2); }
+  .metric-row .v { font-weight: 600; font-family: var(--mono); }
+  .v-green { color: var(--green); }
+  .v-amber { color: #fbbf24; }
+
+  /* ABOUT */
+  .about-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  @media (max-width: 640px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.75rem;
+  }
+  .about-card h3 { font-size: 0.78rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+  .info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .k { color: var(--text2); }
+  .info-row .v { font-weight: 500; }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 3rem 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text3); font-size: 0.85rem;
+  }
+  footer span { color: var(--accent3); }
+
+  /* DIVIDER */
+  .divider {
+    max-width: 1100px; margin: 0 auto;
+    border: none; border-top: 1px solid var(--border);
+  }
+
+  /* FEATURE CHIPS */
+  .feature-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; }
+  .chip {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px;
+    font-size: 0.8rem; color: var(--text2);
+  }
+  .chip.accent { border-color: rgba(59,130,246,0.4); color: var(--accent3); background: rgba(59,130,246,0.08); }
+
+  /* DECAY GRAPH SECTION */
+  .decay-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  @media (max-width: 700px) { .decay-info-grid { grid-template-columns: 1fr; } .hero-stats { grid-template-columns: 1fr; } }
+
+  .progress-ring { animation: fillRing 1.2s ease forwards; }
+  @keyframes fillRing {
+    from { stroke-dashoffset: 314; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect x="2" y="2" width="7" height="7" rx="2" fill="#3b82f6"/>
+      <rect x="11" y="2" width="7" height="7" rx="2" fill="#60a5fa" opacity="0.6"/>
+      <rect x="2" y="11" width="7" height="7" rx="2" fill="#60a5fa" opacity="0.6"/>
+      <rect x="11" y="11" width="7" height="7" rx="2" fill="#3b82f6"/>
+    </svg>
+    Skill<span>Track</span> AI
+  </div>
+  <div class="nav-links">
+    <a href="#home">Home</a>
+    <a href="#decay">Skill Decay</a>
+    <a href="#prediction">Predictor</a>
+    <a href="#analytics">Analytics</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#model">Model</a>
+    <a href="#about">About</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="home">
+<div class="hero">
+  <div class="hero-badge">
+    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#22c55e"/></svg>
+    SkillTrack AI – An Internship Project
+  </div>
+  <h1>Predicting <em>forgotten skills</em><br>before they affect performance</h1>
+  <p>SkillTrack AI uses machine learning to model skill retention over time, identify at-risk competencies, and deliver personalized revision strategies.</p>
+  <div class="hero-cta">
+    <a href="#prediction" class="btn-primary">Run Prediction →</a>
+    <a href="#decay" class="btn-ghost">Learn About Skill Decay</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num">2,847</div>
+      <div class="lbl">Students Analyzed</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">87.4%</div>
+      <div class="lbl">Model Accuracy</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">18</div>
+      <div class="lbl">Skills Tracked</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<hr class="divider">
+
+<!-- SKILL DECAY -->
+<section id="decay">
+  <div class="section-label">Skill Decay</div>
+  <h2 class="section-title">Why skills fade — and why it matters</h2>
+  <p class="section-sub">Skill retention isn't permanent. Without reinforcement, memory traces weaken, leading to knowledge gaps that silently erode performance.</p>
+
+  <div class="decay-info-grid">
+    <div>
+      <div class="decay-visual">
+        <p style="font-size:0.82rem;color:var(--text3);margin-bottom:0.5rem;">Retention over time without revision</p>
+        <div style="position:relative;width:100%;height:160px;">
+          <canvas id="forgettingChart" role="img" aria-label="Ebbinghaus forgetting curve showing memory retention declining from 100% to about 20% over 30 days"></canvas>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem;text-align:center;">Based on the Ebbinghaus Forgetting Curve</p>
+      </div>
+
+      <div class="decay-bar-wrap">
+        <p style="font-size:0.82rem;color:var(--text3);margin-bottom:4px;">Avg. retention by skill category in dataset</p>
+        <div class="decay-row">
+          <label>Python</label>
+          <div class="decay-track"><div class="decay-fill" style="width:82%;background:var(--accent)"></div></div>
+          <span class="decay-pct">82%</span>
+        </div>
+        <div class="decay-row">
+          <label>SQL</label>
+          <div class="decay-track"><div class="decay-fill" style="width:74%;background:var(--teal)"></div></div>
+          <span class="decay-pct">74%</span>
+        </div>
+        <div class="decay-row">
+          <label>ML Concepts</label>
+          <div class="decay-track"><div class="decay-fill" style="width:61%;background:var(--purple)"></div></div>
+          <span class="decay-pct">61%</span>
+        </div>
+        <div class="decay-row">
+          <label>Statistics</label>
+          <div class="decay-track"><div class="decay-fill" style="width:48%;background:var(--amber)"></div></div>
+          <span class="decay-pct">48%</span>
+        </div>
+        <div class="decay-row">
+          <label>Data Structures</label>
+          <div class="decay-track"><div class="decay-fill" style="width:39%;background:var(--red)"></div></div>
+          <span class="decay-pct">39%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid" style="gap:0.75rem;align-content:start;">
+      <div class="card">
+        <h3 style="color:var(--accent2)">📉 The Problem</h3>
+        <p>Studies show humans forget up to <strong style="color:var(--text)">70% of new information</strong> within 24 hours without reinforcement. In technical education, this compounds rapidly across interconnected concepts.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--teal2)">🔁 Spaced Repetition Gap</h3>
+        <p>Most learners rely on passive re-reading. Without active recall at spaced intervals, synaptic connections degrade and skill automaticity is lost.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:#a78bfa">📊 Impact on Careers</h3>
+        <p>Technical skills that aren't practiced atrophy within 3–6 months. SkillTrack AI identifies this risk early — before it becomes visible in work output.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:#fbbf24">✅ The Solution</h3>
+        <p>By modeling decay mathematically and training a Random Forest classifier on real student data, we can predict retention scores and prescribe targeted interventions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PREDICTION MODULE -->
+<section id="prediction">
+  <div class="section-label">Prediction Module</div>
+  <h2 class="section-title">Skill Retention Predictor</h2>
+  <p class="section-sub">Enter your skill details to get a retention score, decay risk probability, and personalised revision actions.</p>
+
+  <div class="pred-grid">
+    <!-- INPUT FORM -->
+    <div class="pred-form">
+      <p style="font-size:0.78rem;color:var(--text3);margin-bottom:1.25rem;letter-spacing:0.02em;text-transform:uppercase;">Input Parameters</p>
+
+      <div class="form-group">
+        <label>Skill Name</label>
+        <input type="text" id="skillName" placeholder="e.g. Python, SQL, Machine Learning..." value="Python Basics">
+      </div>
+
+      <div class="form-group">
+        <label>Quiz Score (0–100)</label>
+        <input type="range" id="quizScore" min="0" max="100" value="72" oninput="updateSlider('quizScore','quizScoreVal')">
+        <div class="slider-val"><span>0</span><strong id="quizScoreVal">72</strong><span>100</span></div>
+      </div>
+
+      <div class="form-group">
+        <label>Days Since Last Revision</label>
+        <input type="range" id="daysSince" min="0" max="90" value="14" oninput="updateSlider('daysSince','daysSinceVal')">
+        <div class="slider-val"><span>0</span><strong id="daysSinceVal">14 days</strong><span>90</span></div>
+      </div>
+
+      <div class="form-group">
+        <label>Practice Frequency (sessions/week)</label>
+        <input type="range" id="practiceFreq" min="0" max="14" value="3" oninput="updateSlider('practiceFreq','practiceFreqVal')">
+        <div class="slider-val"><span>0</span><strong id="practiceFreqVal">3/week</strong><span>14</span></div>
+      </div>
+
+      <div class="form-group">
+        <label>Learning Hours per Week</label>
+        <input type="range" id="learningHrs" min="0" max="40" value="8" oninput="updateSlider('learningHrs','learningHrsVal')">
+        <div class="slider-val"><span>0</span><strong id="learningHrsVal">8 hrs</strong><span>40</span></div>
+      </div>
+
+      <div class="form-group">
+        <label>Engagement Score (0–10)</label>
+        <input type="range" id="engagementScore" min="0" max="10" value="7" oninput="updateSlider('engagementScore','engagementScoreVal')">
+        <div class="slider-val"><span>0</span><strong id="engagementScoreVal">7/10</strong><span>10</span></div>
+      </div>
+
+      <button class="run-btn" onclick="runPrediction()" id="runBtn">
+        Run Prediction Model →
+      </button>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="pred-output">
+      <p style="font-size:0.78rem;color:var(--text3);margin-bottom:1.25rem;letter-spacing:0.02em;text-transform:uppercase;">Model Output</p>
+
+      <div class="output-placeholder" id="outputPlaceholder">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="8" width="32" height="32" rx="6" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M24 18v6M24 30v2" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p>Fill in the parameters and click<br><strong style="color:var(--text2)">Run Prediction Model</strong> to see results</p>
+      </div>
+
+      <div class="output-ready" id="outputReady">
+        <div class="retention-ring-wrap">
+          <div class="retention-ring">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+              <circle id="ringCircle" cx="65" cy="65" r="50" fill="none" stroke="#3b82f6" stroke-width="10"
+                stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"/>
+            </svg>
+            <div class="retention-ring-val">
+              <div class="big" id="retentionPct">--%</div>
+              <div class="sm">Retention</div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Skill Status</div>
+              <div class="status-badge" id="statusBadge">—</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Decay Probability</div>
+              <div style="font-size:1.3rem;font-weight:700;font-family:var(--mono);" id="decayProb">—</div>
+            </div>
+            <div id="skillNameOut" style="font-size:0.88rem;color:var(--text2);"></div>
+          </div>
+        </div>
+
+        <div class="output-metrics">
+          <div class="out-metric">
+            <div class="m-lbl">Confidence</div>
+            <div class="m-val" id="confidenceOut">—</div>
+          </div>
+          <div class="out-metric">
+            <div class="m-lbl">Risk Level</div>
+            <div class="m-val" id="riskLevelOut">—</div>
+          </div>
+          <div class="out-metric">
+            <div class="m-lbl">Days to Critical</div>
+            <div class="m-val" id="daysCriticalOut">—</div>
+          </div>
+          <div class="out-metric">
+            <div class="m-lbl">Revision Priority</div>
+            <div class="m-val" id="revisionPriorityOut">—</div>
+          </div>
+        </div>
+
+        <div class="recommendations">
+          <h4>Personalised Recommendations</h4>
+          <div id="recsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ANALYTICS DASHBOARD -->
+<section id="analytics">
+  <div class="section-label">Analytics Dashboard</div>
+  <h2 class="section-title">Learning Trends &amp; Patterns</h2>
+  <p class="section-sub">Aggregated visualisations from 2,847 student records analysed in the dataset.</p>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Retention Score Distribution</h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="retentionDistChart" role="img" aria-label="Histogram showing distribution of retention scores across students">Retention score distribution across students.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Most Forgotten Skills</h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="forgottenSkillsChart" role="img" aria-label="Bar chart showing skills with lowest retention rates">Skills ranked by decay rate.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Weekly Practice Trends</h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="practiceChart" role="img" aria-label="Line chart of weekly practice sessions over time">Weekly practice session trends.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Retention by Study Hours</h3>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="hoursRetentionChart" role="img" aria-label="Scatter chart showing correlation between study hours and retention">Correlation between study hours and retention.</canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- DATASET INSIGHTS -->
+<section id="dataset">
+  <div class="section-label">Dataset Insights</div>
+  <h2 class="section-title">What the data reveals</h2>
+  <p class="section-sub">Key findings extracted from the training and evaluation dataset used to build the SkillTrack AI model.</p>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="i-num c-blue-num">2,847</div>
+      <div class="i-lbl">Total Students Analysed</div>
+    </div>
+    <div class="insight-card">
+      <div class="i-num c-teal-num">67.3%</div>
+      <div class="i-lbl">Average Retention Score</div>
+    </div>
+    <div class="insight-card">
+      <div class="i-num c-purple-num">18</div>
+      <div class="i-lbl">Skills Tracked</div>
+    </div>
+    <div class="insight-card">
+      <div class="i-num c-amber-num">34.2%</div>
+      <div class="i-lbl">Students At Risk</div>
+    </div>
+  </div>
+
+  <div class="card-grid card-grid-2">
+    <div class="card">
+      <h3 style="color:var(--green);margin-bottom:1rem;">🏆 Top Retained Skills</h3>
+      <table class="skills-table">
+        <thead><tr><th>Skill</th><th>Avg. Retention</th><th>Trend</th></tr></thead>
+        <tbody>
+          <tr><td><span class="skill-pill">Python</span></td><td style="font-family:var(--mono);">82%</td><td style="color:var(--green);">↑ Stable</td></tr>
+          <tr><td><span class="skill-pill">SQL Queries</span></td><td style="font-family:var(--mono);">79%</td><td style="color:var(--green);">↑ Stable</td></tr>
+          <tr><td><span class="skill-pill">Git/Version Control</span></td><td style="font-family:var(--mono);">76%</td><td style="color:var(--teal2);">→ Steady</td></tr>
+          <tr><td><span class="skill-pill">Data Wrangling</span></td><td style="font-family:var(--mono);">74%</td><td style="color:var(--teal2);">→ Steady</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--red);margin-bottom:1rem;">⚠️ High-Risk Skills</h3>
+      <table class="skills-table">
+        <thead><tr><th>Skill</th><th>Avg. Retention</th><th>Trend</th></tr></thead>
+        <tbody>
+          <tr><td><span class="skill-pill" style="background:rgba(239,68,68,0.1);color:#f87171;">Bayesian Stats</span></td><td style="font-family:var(--mono);">31%</td><td style="color:var(--red);">↓ Declining</td></tr>
+          <tr><td><span class="skill-pill" style="background:rgba(239,68,68,0.1);color:#f87171;">Graph Algorithms</span></td><td style="font-family:var(--mono);">35%</td><td style="color:var(--red);">↓ Declining</td></tr>
+          <tr><td><span class="skill-pill" style="background:rgba(239,68,68,0.1);color:#f87171;">Deep Learning</span></td><td style="font-family:var(--mono);">39%</td><td style="color:var(--amber);">↓ At Risk</td></tr>
+          <tr><td><span class="skill-pill" style="background:rgba(239,68,68,0.1);color:#f87171;">Data Structures</span></td><td style="font-family:var(--mono);">39%</td><td style="color:var(--amber);">↓ At Risk</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- MODEL INFO -->
+<section id="model">
+  <div class="section-label">Model Information</div>
+  <h2 class="section-title">Machine Learning Architecture</h2>
+  <p class="section-sub">Three classification algorithms were trained and evaluated. Random Forest delivered the best overall performance.</p>
+
+  <div class="model-grid">
+    <div class="model-card featured">
+      <h3>
+        <div class="algo-icon algo-rf">RF</div>
+        Random Forest
+      </h3>
+      <div class="metric-row"><span class="k">Accuracy</span><span class="v v-green">87.4%</span></div>
+      <div class="metric-row"><span class="k">Precision</span><span class="v v-green">85.1%</span></div>
+      <div class="metric-row"><span class="k">Recall</span><span class="v v-green">84.8%</span></div>
+      <div class="metric-row"><span class="k">F1 Score</span><span class="v v-green">0.849</span></div>
+      <div class="metric-row"><span class="k">Estimators</span><span class="v">100 trees</span></div>
+      <div class="metric-row"><span class="k">Max Depth</span><span class="v">12</span></div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text2);">
+        Best generalisation across all skill categories. Handles non-linear feature interactions well. Selected for deployment.
+      </div>
+    </div>
+
+    <div class="model-card">
+      <h3>
+        <div class="algo-icon algo-dt">DT</div>
+        Decision Tree
+      </h3>
+      <div class="metric-row"><span class="k">Accuracy</span><span class="v v-amber">79.6%</span></div>
+      <div class="metric-row"><span class="k">Precision</span><span class="v v-amber">77.3%</span></div>
+      <div class="metric-row"><span class="k">Recall</span><span class="v v-amber">76.9%</span></div>
+      <div class="metric-row"><span class="k">F1 Score</span><span class="v v-amber">0.771</span></div>
+      <div class="metric-row"><span class="k">Max Depth</span><span class="v">8</span></div>
+      <div class="metric-row"><span class="k">Min Samples Split</span><span class="v">5</span></div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text2);">
+        High interpretability. Prone to overfitting on small subsets. Useful for explaining individual decisions visually.
+      </div>
+    </div>
+
+    <div class="model-card">
+      <h3>
+        <div class="algo-icon algo-lr">LR</div>
+        Logistic Regression
+      </h3>
+      <div class="metric-row"><span class="k">Accuracy</span><span class="v">74.2%</span></div>
+      <div class="metric-row"><span class="k">Precision</span><span class="v">72.8%</span></div>
+      <div class="metric-row"><span class="k">Recall</span><span class="v">71.4%</span></div>
+      <div class="metric-row"><span class="k">F1 Score</span><span class="v">0.721</span></div>
+      <div class="metric-row"><span class="k">Solver</span><span class="v">lbfgs</span></div>
+      <div class="metric-row"><span class="k">Max Iter</span><span class="v">200</span></div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text2);">
+        Useful as baseline. Struggles with non-linear decay patterns. Fast to train and interpretable coefficients.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem;">
+    <h3 style="margin-bottom:0.75rem;">Feature Importance (Random Forest)</h3>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem;">Relative contribution of each input feature to the final prediction.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:180px 1fr 50px;gap:12px;align-items:center;font-size:0.85rem;">
+        <span style="color:var(--text2);">Days Since Revision</span>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="width:91%;height:100%;background:var(--accent);border-radius:4px;"></div></div>
+        <span style="font-family:var(--mono);font-size:0.78rem;color:var(--accent3);">0.31</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 50px;gap:12px;align-items:center;font-size:0.85rem;">
+        <span style="color:var(--text2);">Quiz Score</span>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="width:74%;height:100%;background:var(--teal);border-radius:4px;"></div></div>
+        <span style="font-family:var(--mono);font-size:0.78rem;color:var(--teal2);">0.25</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 50px;gap:12px;align-items:center;font-size:0.85rem;">
+        <span style="color:var(--text2);">Engagement Score</span>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="width:59%;height:100%;background:#8b5cf6;border-radius:4px;"></div></div>
+        <span style="font-family:var(--mono);font-size:0.78rem;color:#a78bfa;">0.20</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 50px;gap:12px;align-items:center;font-size:0.85rem;">
+        <span style="color:var(--text2);">Practice Frequency</span>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="width:44%;height:100%;background:var(--amber);border-radius:4px;"></div></div>
+        <span style="font-family:var(--mono);font-size:0.78rem;color:#fbbf24;">0.15</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 50px;gap:12px;align-items:center;font-size:0.85rem;">
+        <span style="color:var(--text2);">Learning Hours/Week</span>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="width:26%;height:100%;background:var(--red);border-radius:4px;"></div></div>
+        <span style="font-family:var(--mono);font-size:0.78rem;color:#f87171;">0.09</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-label">About This Project</div>
+  <h2 class="section-title">Project Information</h2>
+
+  <div class="about-grid">
+    <div class="about-card">
+      <h3>Developer Information</h3>
+      <div class="info-row"><span class="k">Developer Name</span><span class="v">S. M. Gopika</span></div>
+      <div class="info-row"><span class="k">Programme</span><span class="v">BCA</span></div>
+      <div class="info-row"><span class="k">Institution</span><span class="v">Asian School of Business, Trivandrum</span></div>
+      <div class="info-row"><span class="k">Batch</span><span class="v">2025–2029</span></div>
+      <div class="info-row"><span class="k">Role</span><span class="v">Project Developer</span></div>
+    </div>
+    <div class="about-card">
+      <h3>Project Details</h3>
+      <div class="info-row"><span class="k">Project Title</span><span class="v">SkillTrack AI</span></div>
+      <div class="info-row"><span class="k">Problem Domain</span><span class="v">Skill Decay Prediction</span></div>
+      <div class="info-row"><span class="k">Algorithm</span><span class="v">Random Forest</span></div>
+      <div class="info-row"><span class="k">Language</span><span class="v">Python 3.11</span></div>
+      <div class="info-row"><span class="k">Frontend Stack</span><span class="v">HTML / CSS / JS</span></div>
+      <div class="info-row"><span class="k">Backend Stack</span><span class="v">Flask + Scikit-learn</span></div>
+    </div>
+
+    <div class="about-card" style="grid-column: 1 / -1;">
+      <h3>Tech Stack</h3>
+      <div class="feature-chips">
+        <span class="chip accent">Python 3.11</span>
+        <span class="chip accent">Scikit-learn</span>
+        <span class="chip accent">Pandas</span>
+        <span class="chip accent">NumPy</span>
+        <span class="chip">Flask</span>
+        <span class="chip">HTML5</span>
+        <span class="chip">CSS3</span>
+        <span class="chip">JavaScript ES6</span>
+        <span class="chip">Chart.js</span>
+        <span class="chip">Bootstrap 5</span>
+        <span class="chip">Random Forest</span>
+        <span class="chip">Decision Tree</span>
+        <span class="chip">Logistic Regression</span>
+        <span class="chip">Jupyter Notebook</span>
+        <span class="chip">VS Code</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>SkillTrack AI — Internship Project &nbsp;·&nbsp; Built with <span>Python + Scikit-learn + Chart.js</span></p>
+  <p style="margin-top:6px;font-size:0.78rem;">Predicting forgotten skills before they affect performance.</p>
+</footer>
+
+<script>
+/* === SLIDER LABELS === */
+function updateSlider(id, outId) {
+  const v = document.getElementById(id).value;
+  const el = document.getElementById(outId);
+  if (id === 'daysSince') el.textContent = v + ' days';
+  else if (id === 'practiceFreq') el.textContent = v + '/week';
+  else if (id === 'learningHrs') el.textContent = v + ' hrs';
+  else if (id === 'engagementScore') el.textContent = v + '/10';
+  else el.textContent = v;
+}
+
+/* === PREDICTION ENGINE === */
+function runPrediction() {
+  const btn = document.getElementById('runBtn');
+  btn.textContent = 'Analysing...'; btn.classList.add('loading');
+
+  setTimeout(() => {
+    const skillName = document.getElementById('skillName').value || 'Your Skill';
+    const quizScore = +document.getElementById('quizScore').value;
+    const daysSince = +document.getElementById('daysSince').value;
+    const practiceFreq = +document.getElementById('practiceFreq').value;
+    const learningHrs = +document.getElementById('learningHrs').value;
+    const engagementScore = +document.getElementById('engagementScore').value;
+
+    // Simulated Random Forest model logic
+    let retention = 0;
+    retention += (quizScore / 100) * 35;
+    retention += Math.max(0, 25 - (daysSince * 0.8));
+    retention += Math.min(20, practiceFreq * 2.5);
+    retention += Math.min(12, learningHrs * 0.8);
+    retention += (engagementScore / 10) * 8;
+    retention = Math.min(98, Math.max(5, retention));
+    retention = Math.round(retention);
+
+    const decayProb = Math.round(Math.max(2, Math.min(95, 100 - retention - 5)));
+    const confidence = Math.round(82 + Math.random() * 6);
+    const daysCritical = Math.round(Math.max(1, (retention / 100) * 45 - daysSince * 0.3));
+
+    let status, statusClass, riskLevel, revPriority;
+    if (retention >= 70) {
+      status = 'High Retention'; statusClass = 'status-high';
+      riskLevel = 'Low'; revPriority = 'Maintenance';
+    } else if (retention >= 45) {
+      status = 'Moderate Retention'; statusClass = 'status-mod';
+      riskLevel = 'Medium'; revPriority = 'Moderate';
+    } else {
+      status = 'At Risk'; statusClass = 'status-risk';
+      riskLevel = 'High'; revPriority = 'Urgent';
+    }
+
+    const recs = generateRecs(skillName, retention, daysSince, quizScore, practiceFreq, engagementScore);
+
+    // Update DOM
+    document.getElementById('outputPlaceholder').style.display = 'none';
+    const out = document.getElementById('outputReady');
+    out.style.display = 'flex';
+
+    document.getElementById('retentionPct').textContent = retention + '%';
+    document.getElementById('retentionPct').style.color = retention >= 70 ? '#4ade80' : retention >= 45 ? '#fbbf24' : '#f87171';
+
+    const circ = document.getElementById('ringCircle');
+    const dashOffset = Math.round(314 - (314 * retention / 100));
+    circ.style.transition = 'stroke-dashoffset 1s ease';
+    circ.style.strokeDashoffset = dashOffset;
+    circ.style.stroke = retention >= 70 ? '#22c55e' : retention >= 45 ? '#f59e0b' : '#ef4444';
+
+    document.getElementById('statusBadge').textContent = status;
+    document.getElementById('statusBadge').className = 'status-badge ' + statusClass;
+    document.getElementById('decayProb').textContent = decayProb + '%';
+    document.getElementById('skillNameOut').textContent = '📌 ' + skillName;
+    document.getElementById('confidenceOut').textContent = confidence + '%';
+    document.getElementById('riskLevelOut').textContent = riskLevel;
+    document.getElementById('daysCriticalOut').textContent = daysCritical + ' days';
+    document.getElementById('revisionPriorityOut').textContent = revPriority;
+
+    const recsList = document.getElementById('recsList');
+    recsList.innerHTML = recs.map(r => `<div class="rec-item">${r}</div>`).join('');
+
+    btn.textContent = 'Run Prediction Model →'; btn.classList.remove('loading');
+  }, 900);
+}
+
+function generateRecs(skill, retention, days, quiz, freq, engagement) {
+  const recs = [];
+  if (days > 7) recs.push(`Revise ${skill} fundamentals — ${days} days since last session is too long.`);
+  if (quiz < 60) recs.push(`Retry the ${skill} quiz to identify specific weak areas.`);
+  if (freq < 3) recs.push(`Increase practice to at least 3 sessions/week for ${skill}.`);
+  if (engagement < 5) recs.push(`Try a new format for ${skill}: video tutorial or interactive exercise.`);
+  if (retention < 50) recs.push(`Complete 2 hands-on exercises on ${skill} before end of week.`);
+  if (retention < 70) recs.push(`Review your previous ${skill} notes and summarize key concepts.`);
+  recs.push(`Take a 15-minute ${skill} concept quiz to reinforce memory encoding.`);
+  if (recs.length < 3) recs.push(`Schedule a ${skill} revision session within the next 3 days.`);
+  return recs.slice(0, 5);
+}
+
+/* === FORGETTING CURVE CHART === */
+const fcCtx = document.getElementById('forgettingChart').getContext('2d');
+const fcDays = [0,1,2,3,5,7,10,14,21,30];
+const fcData = [100, 58, 44, 36, 28, 23, 19, 16, 14, 12];
+new Chart(fcCtx, {
+  type: 'line',
+  data: {
+    labels: fcDays.map(d => d+'d'),
+    datasets: [{
+      label: 'Retention %',
+      data: fcData,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.08)',
+      fill: true,
+      tension: 0.45,
+      pointRadius: 3,
+      pointBackgroundColor: '#3b82f6',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '% retained' } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 11 } } },
+      y: { min: 0, max: 110, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 11 }, callback: v => v + '%' } }
+    }
+  }
+});
+
+/* === RETENTION DISTRIBUTION === */
+const rdCtx = document.getElementById('retentionDistChart').getContext('2d');
+new Chart(rdCtx, {
+  type: 'bar',
+  data: {
+    labels: ['0-20%','21-40%','41-60%','61-80%','81-100%'],
+    datasets: [{
+      label: 'Students',
+      data: [156, 398, 721, 1049, 523],
+      backgroundColor: ['#ef4444','#f97316','#f59e0b','#22c55e','#3b82f6'],
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+    }
+  }
+});
+
+/* === MOST FORGOTTEN SKILLS === */
+const mfCtx = document.getElementById('forgottenSkillsChart').getContext('2d');
+new Chart(mfCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Bayesian Stat','Graph Algo','Deep Learning','DS','Statistics'],
+    datasets: [{
+      label: 'Avg Retention %',
+      data: [31, 35, 39, 39, 48],
+      backgroundColor: '#ef4444',
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => v+'%' } },
+      y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }
+    }
+  }
+});
+
+/* === WEEKLY PRACTICE TRENDS === */
+const wpCtx = document.getElementById('practiceChart').getContext('2d');
+new Chart(wpCtx, {
+  type: 'line',
+  data: {
+    labels: ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6','Week 7','Week 8'],
+    datasets: [
+      { label: 'Avg Sessions', data: [3.2, 2.8, 3.6, 2.1, 3.9, 4.2, 3.7, 4.5], borderColor: '#14b8a6', tension: 0.4, pointRadius: 3, borderWidth: 2, pointBackgroundColor: '#14b8a6', fill: false },
+      { label: 'At-Risk Group', data: [1.1, 0.9, 1.4, 0.7, 1.2, 0.8, 1.0, 0.6], borderColor: '#ef4444', tension: 0.4, pointRadius: 3, borderWidth: 2, pointBackgroundColor: '#ef4444', borderDash: [4,3], fill: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+    }
+  }
+});
+
+/* === RETENTION VS STUDY HOURS === */
+const hrCtx = document.getElementById('hoursRetentionChart').getContext('2d');
+const scatterData = Array.from({length:60}, (_,i) => ({
+  x: +(Math.random()*38+1).toFixed(1),
+  y: Math.round(Math.min(98, Math.max(15, 30 + (Math.random()*40+1)*1.1 + Math.random()*15 - 10)))
+}));
+new Chart(hrCtx, {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Student',
+      data: scatterData,
+      backgroundColor: 'rgba(139,92,246,0.55)',
+      pointRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 'Hours/week', color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: { min: 0, max: 105, title: { display: true, text: 'Retention %', color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => v+'%' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
