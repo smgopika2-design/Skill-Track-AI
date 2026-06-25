@@ -26,22 +26,14 @@ SkillTrack AI addresses this challenge by predicting skill decay and recommendin
 
 ## ✨ Features
 
-- 📊 Skill Retention Prediction
-- 🤖 Machine Learning Model
 - 🎯 Skill Retention Prediction
 - 📉 Skill Decay Risk Analysis
 - 🤖 Random Forest Prediction Model
-- 📊 Learning Analytics Dashboard
-- 📈 Interactive Data Visualizations
 - 🧠 Personalized Revision Recommendations
+- 📊 Learning Analytics Dashboard
+- 📈 Interactive Charts & Visualizations
 - 📂 Dataset Insights
 - 🌐 Responsive Web Application
-- 📈 Learning Analytics Dashboard
-- 🧠 Personalized Revision Recommendations
-- 📉 Skill Decay Risk Assessment
-- 📋 Dataset Insights
-- 📊 Interactive Charts & Visualizations
-- 🌐 Responsive Web Interface
 
 ---
 
