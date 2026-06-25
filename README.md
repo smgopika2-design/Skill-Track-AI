@@ -111,6 +111,12 @@ The dataset contains information such as:
 - Retention Status
 
 ---
+## Project Statistics
+
+- Dataset Size: 2,847 Student Records
+- Skills Tracked: 18
+- ML Algorithm: Random Forest
+- Accuracy: 87.4%
 
 ## 🎯 Objectives
 
@@ -133,6 +139,15 @@ SkillTrack AI helps learners:
 - Enhance academic and professional performance.
 
 ---
+
+## Future Scope
+
+- Mobile Application
+- AI Chatbot
+- LMS Integration
+- Cloud Deployment
+- Real-Time Learning Analytics
+- Personalized Study Plans
 
 ## 👩‍💻 Developer
 
