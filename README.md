@@ -28,6 +28,14 @@ SkillTrack AI addresses this challenge by predicting skill decay and recommendin
 
 - 📊 Skill Retention Prediction
 - 🤖 Machine Learning Model
+- 🎯 Skill Retention Prediction
+- 📉 Skill Decay Risk Analysis
+- 🤖 Random Forest Prediction Model
+- 📊 Learning Analytics Dashboard
+- 📈 Interactive Data Visualizations
+- 🧠 Personalized Revision Recommendations
+- 📂 Dataset Insights
+- 🌐 Responsive Web Application
 - 📈 Learning Analytics Dashboard
 - 🧠 Personalized Revision Recommendations
 - 📉 Skill Decay Risk Assessment
@@ -44,6 +52,9 @@ SkillTrack AI addresses this challenge by predicting skill decay and recommendin
 - CSS3
 - JavaScript
 - Chart.js
+
+### Backend
+- Flask
 
 ### Machine Learning
 - Python
@@ -80,19 +91,21 @@ SkillTrack-AI/
 ```
 Problem Identification
         ↓
-Data Collection
+Dataset Collection
         ↓
 Data Preprocessing
         ↓
 Feature Engineering
         ↓
-Machine Learning Model Development
+Model Training
         ↓
-Testing & Evaluation
+Model Evaluation
         ↓
-Prediction Generation
+Skill Retention Prediction
         ↓
-Presentation of Results
+Recommendation Generation
+        ↓
+Dashboard Visualization
 ```
 
 ---
@@ -128,11 +141,22 @@ The dataset contains information such as:
 
 ---
 
+### Algorithms Used
+
+- Random Forest (Primary Model)
+- Decision Tree
+- Logistic Regression
+  
+
 ## 📈 Expected Outcome
 
 SkillTrack AI helps learners:
 
-- Improve knowledge retention.
+- Predict student skill retention.
+- Detect skills likely to decline.
+- Recommend timely revision activities.
+- Support educators with learning analytics.
+- Improve long-term academic performance.
 - Identify weak skills early.
 - Build effective revision habits.
 - Reduce skill decay.
@@ -142,12 +166,14 @@ SkillTrack AI helps learners:
 
 ## Future Scope
 
-- Mobile Application
-- AI Chatbot
-- LMS Integration
-- Cloud Deployment
-- Real-Time Learning Analytics
-- Personalized Study Plans
+- Real-time learning analytics
+- Integration with Learning Management Systems (LMS)
+- Adaptive revision scheduling
+- Mobile application
+- AI chatbot for revision assistance
+- Cloud deployment
+- Multi-user authentication
+- Instructor analytics dashboard
 
 ## 👩‍💻 Developer
 
